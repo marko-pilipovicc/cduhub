@@ -244,22 +244,20 @@ namespace WwDevicesDotNet.WinWing.Pap3
         /// Call this method explicitly when you want to sync the solenoid with your state.
         /// </summary>
         /// <param name="state">The frontpanel state containing MagneticActivated property.</param>
-        public void UpdateSolenoid(IFrontpanelState state)
+        public void UpdateSolenoid(Pap3State state)
         {
             if(!IsConnected)
                 return;
 
-            if(state is Pap3State pap3State) {
-                // Only send command if magnetic state has changed
-                if(pap3State.MagneticActivated != _LastMagneticState) {
-                    if(pap3State.MagneticActivated) {
-                        SendCommand(BuildEngageSolenoidCommand());
-                    } else {
-                        SendCommand(BuildReleaseSolenoidCommand());
-                    }
-                    _LastMagneticState = pap3State.MagneticActivated;
+            if(state.MagneticActivated != _LastMagneticState) {
+                if(state.MagneticActivated) {
+                    SendCommand(BuildEngageSolenoidCommand());
+                } else {
+                    SendCommand(BuildReleaseSolenoidCommand());
                 }
+                _LastMagneticState = state.MagneticActivated;
             }
+            
         }
 
         /// <inheritdoc/>
