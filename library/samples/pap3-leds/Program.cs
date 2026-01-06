@@ -176,8 +176,8 @@ namespace Pap3LedsTest
             Console.WriteLine("  X - Clear all displays");
             Console.WriteLine();
             Console.WriteLine("Solenoid Tests:");
-            Console.WriteLine("  R - Release solenoid (ALT knob pops up)");
-            Console.WriteLine("  E - Engage solenoid (ALT knob locks down)");
+            Console.WriteLine("  R - Release solenoid (A/T ARM switch releases)");
+            Console.WriteLine("  E - Engage solenoid (A/T ARM switch locks)");
             Console.WriteLine("  T - Trigger solenoid (full cycle test)");
             Console.WriteLine();
             Console.WriteLine("Other:");
@@ -807,7 +807,7 @@ namespace Pap3LedsTest
             Console.WriteLine("=== Release Solenoid Test ===");
             Console.WriteLine();
             Console.WriteLine("Sending release command to solenoid...");
-            Console.WriteLine("The altitude knob should pop up if currently engaged.");
+            Console.WriteLine("The A/T ARM switch should release if currently engaged.");
             Console.WriteLine();
             
             if(_Pap3 is Pap3Device pap3Device) {
@@ -828,7 +828,7 @@ namespace Pap3LedsTest
             Console.WriteLine("=== Engage Solenoid Test ===");
             Console.WriteLine();
             Console.WriteLine("Sending engage command to solenoid...");
-            Console.WriteLine("The altitude knob should lock down if currently released.");
+            Console.WriteLine("The A/T ARM switch should lock if currently released.");
             Console.WriteLine();
             
             if(_Pap3 is Pap3Device pap3Device) {
@@ -853,7 +853,7 @@ namespace Pap3LedsTest
             Console.WriteLine("  2. Wait 50ms");
             Console.WriteLine("  3. Engage solenoid (lock down)");
             Console.WriteLine();
-            Console.WriteLine("Watch the altitude knob to verify the action.");
+            Console.WriteLine("Watch the A/T ARM switch to verify the action.");
             Console.WriteLine();
             Console.WriteLine("Press any key to trigger...");
             Console.ReadKey(intercept: true);
