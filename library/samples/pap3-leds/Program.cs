@@ -849,9 +849,9 @@ namespace Pap3LedsTest
             Console.WriteLine("=== Trigger Solenoid Cycle Test ===");
             Console.WriteLine();
             Console.WriteLine("This test performs a full solenoid cycle:");
-            Console.WriteLine("  1. Engage solenoid (lock down)");
+            Console.WriteLine("  1. Release solenoid (pop up)");
             Console.WriteLine("  2. Wait 50ms");
-            Console.WriteLine("  3. Release solenoid (pop up)");
+            Console.WriteLine("  3. Engage solenoid (lock down)");
             Console.WriteLine();
             Console.WriteLine("Watch the altitude knob to verify the action.");
             Console.WriteLine();
