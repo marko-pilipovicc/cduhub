@@ -117,6 +117,15 @@ namespace Pap3LedsTest
                             _Pap3?.UpdateDisplay(_DisplayState);
                             Console.WriteLine("All displays cleared.");
                             break;
+                        case ConsoleKey.R:
+                            TestReleaseSolenoid();
+                            break;
+                        case ConsoleKey.E:
+                            TestEngageSolenoid();
+                            break;
+                        case ConsoleKey.T:
+                            TestTriggerSolenoid();
+                            break;
                         case ConsoleKey.M:
                             ShowMenu();
                             break;
@@ -165,6 +174,11 @@ namespace Pap3LedsTest
             Console.WriteLine("  V - Test Vertical Speed display (V/S/FPA)");
             Console.WriteLine("  I - Test all indicators sequence");
             Console.WriteLine("  X - Clear all displays");
+            Console.WriteLine();
+            Console.WriteLine("Solenoid Tests:");
+            Console.WriteLine("  R - Release solenoid (A/T ARM switch releases)");
+            Console.WriteLine("  E - Engage solenoid (A/T ARM switch locks)");
+            Console.WriteLine("  T - Trigger solenoid (full cycle test)");
             Console.WriteLine();
             Console.WriteLine("Other:");
             Console.WriteLine("  M - Show this menu");
@@ -652,101 +666,126 @@ namespace Pap3LedsTest
         {
             Console.WriteLine($"[EVENT] Control activated: {e.ControlId}");
             
+            var ledChanged = false;
+            
             // Toggle LED state based on which control was pressed
             switch(e.ControlId) {
                 // Autothrottle buttons
                 case "N1":
                     _Leds.N1 = !_Leds.N1;
                     Console.WriteLine($"        N1 LED: {(_Leds.N1 ? "ON" : "OFF")}");
+                    ledChanged = true;
                     break;
                 case "Speed":
                     _Leds.Speed = !_Leds.Speed;
                     Console.WriteLine($"        SPEED LED: {(_Leds.Speed ? "ON" : "OFF")}");
+                    ledChanged = true;
                     break;
                 case "ATArmOn":
-                    _Leds.AtArm = true;   // Switch ON → LED ON
+                    _Leds.AtArm = true;
                     Console.WriteLine($"        AT ARM LED: ON (switch ON)");
+                    ledChanged = true;
                     break;
                 case "ATArmOff":
-                    _Leds.AtArm = false;  // Switch OFF → LED OFF
+                    _Leds.AtArm = false;
                     Console.WriteLine($"        AT ARM LED: OFF (switch OFF)");
+                    ledChanged = true;
                     break;
 
                 // Flight Director buttons (Pilot and Copilot)
-                // Note: These use switch position logic (not toggle)
                 case "PltFdOn":
-                    _Leds.FdL = true;   // Switch ON → LED ON
+                    _Leds.FdL = true;
                     Console.WriteLine($"        FD L (Pilot) LED: ON (switch ON)");
+                    ledChanged = true;
                     break;
                 case "PltFdOff":
-                    _Leds.FdL = false;  // Switch OFF → LED OFF
+                    _Leds.FdL = false;
                     Console.WriteLine($"        FD L (Pilot) LED: OFF (switch OFF)");
+                    ledChanged = true;
                     break;
                 case "CplFdOn":
-                    _Leds.FdR = true;   // Switch ON → LED ON
+                    _Leds.FdR = true;
                     Console.WriteLine($"        FD R (Copilot) LED: ON (switch ON)");
+                    ledChanged = true;
                     break;
                 case "CplFdOff":
-                    _Leds.FdR = false;  // Switch OFF → LED OFF
+                    _Leds.FdR = false;
                     Console.WriteLine($"        FD R (Copilot) LED: OFF (switch OFF)");
+                    ledChanged = true;
                     break;
 
                 // Autopilot mode buttons
                 case "Lnav":
                     _Leds.Lnav = !_Leds.Lnav;
                     Console.WriteLine($"        LNAV LED: {(_Leds.Lnav ? "ON" : "OFF")}");
+                    ledChanged = true;
                     break;
                 case "Vnav":
                     _Leds.Vnav = !_Leds.Vnav;
                     Console.WriteLine($"        VNAV LED: {(_Leds.Vnav ? "ON" : "OFF")}");
+                    ledChanged = true;
                     break;
                 case "LvlChg":
                     _Leds.LvlChg = !_Leds.LvlChg;
                     Console.WriteLine($"        LVL CHG LED: {(_Leds.LvlChg ? "ON" : "OFF")}");
+                    ledChanged = true;
                     break;
                 case "HdgSel":
                     _Leds.HdgSel = !_Leds.HdgSel;
                     Console.WriteLine($"        HDG SEL LED: {(_Leds.HdgSel ? "ON" : "OFF")}");
+                    ledChanged = true;
                     break;
                 case "VorLoc":
                     _Leds.VorLoc = !_Leds.VorLoc;
                     Console.WriteLine($"        VOR LOC LED: {(_Leds.VorLoc ? "ON" : "OFF")}");
+                    ledChanged = true;
                     break;
                 case "App":
                     _Leds.App = !_Leds.App;
                     Console.WriteLine($"        APP LED: {(_Leds.App ? "ON" : "OFF")}");
+                    ledChanged = true;
                     break;
                 case "AltHold":
                     _Leds.AltHold = !_Leds.AltHold;
                     Console.WriteLine($"        ALT HOLD LED: {(_Leds.AltHold ? "ON" : "OFF")}");
+                    ledChanged = true;
                     break;
                 case "Vs":
                     _Leds.Vs = !_Leds.Vs;
                     Console.WriteLine($"        V/S LED: {(_Leds.Vs ? "ON" : "OFF")}");
+                    ledChanged = true;
                     break;
 
                 // Autopilot command buttons
                 case "CmdA":
                     _Leds.CmdA = !_Leds.CmdA;
                     Console.WriteLine($"        CMD A LED: {(_Leds.CmdA ? "ON" : "OFF")}");
+                    ledChanged = true;
                     break;
                 case "CmdB":
                     _Leds.CmdB = !_Leds.CmdB;
                     Console.WriteLine($"        CMD B LED: {(_Leds.CmdB ? "ON" : "OFF")}");
+                    ledChanged = true;
                     break;
                 case "CwsA":
                     _Leds.CwsA = !_Leds.CwsA;
                     Console.WriteLine($"        CWS A LED: {(_Leds.CwsA ? "ON" : "OFF")}");
+                    ledChanged = true;
                     break;
                 case "CwsB":
                     _Leds.CwsB = !_Leds.CwsB;
                     Console.WriteLine($"        CWS B LED: {(_Leds.CwsB ? "ON" : "OFF")}");
+                    ledChanged = true;
                     break;
 
                 default:
-                    // Button doesn't have an associated LED
                     Console.WriteLine($"        (No LED for {e.ControlId})");
                     break;
+            }
+            
+            // Immediately update LEDs when a button is pressed (don't wait for timer)
+            if(ledChanged) {
+                _Pap3?.UpdateLeds(_Leds);
             }
         }
 
@@ -760,6 +799,77 @@ namespace Pap3LedsTest
             Console.WriteLine();
             Console.WriteLine("WARNING: PAP-3 device disconnected!");
             Console.WriteLine();
+        }
+
+        static void TestReleaseSolenoid()
+        {
+            Console.WriteLine();
+            Console.WriteLine("=== Release Solenoid Test ===");
+            Console.WriteLine();
+            Console.WriteLine("Sending release command to solenoid...");
+            Console.WriteLine("The A/T ARM switch should release if currently engaged.");
+            Console.WriteLine();
+            
+            if(_Pap3 is Pap3Device pap3Device) {
+                pap3Device.ReleaseSolenoid();
+                Console.WriteLine("Release command sent!");
+            } else {
+                Console.WriteLine("ERROR: Device is not a PAP-3 device!");
+            }
+            
+            Console.WriteLine();
+            Console.WriteLine("Press any key to continue...");
+            Console.ReadKey(intercept: true);
+        }
+
+        static void TestEngageSolenoid()
+        {
+            Console.WriteLine();
+            Console.WriteLine("=== Engage Solenoid Test ===");
+            Console.WriteLine();
+            Console.WriteLine("Sending engage command to solenoid...");
+            Console.WriteLine("The A/T ARM switch should lock if currently released.");
+            Console.WriteLine();
+            
+            if(_Pap3 is Pap3Device pap3Device) {
+                pap3Device.EngageSolenoid();
+                Console.WriteLine("Engage command sent!");
+            } else {
+                Console.WriteLine("ERROR: Device is not a PAP-3 device!");
+            }
+            
+            Console.WriteLine();
+            Console.WriteLine("Press any key to continue...");
+            Console.ReadKey(intercept: true);
+        }
+
+        static void TestTriggerSolenoid()
+        {
+            Console.WriteLine();
+            Console.WriteLine("=== Trigger Solenoid Cycle Test ===");
+            Console.WriteLine();
+            Console.WriteLine("This test performs a full solenoid cycle:");
+            Console.WriteLine("  1. Release solenoid (pop up)");
+            Console.WriteLine("  2. Wait 50ms");
+            Console.WriteLine("  3. Engage solenoid (lock down)");
+            Console.WriteLine();
+            Console.WriteLine("Watch the A/T ARM switch to verify the action.");
+            Console.WriteLine();
+            Console.WriteLine("Press any key to trigger...");
+            Console.ReadKey(intercept: true);
+            
+            if(_Pap3 is Pap3Device pap3Device) {
+                Console.WriteLine();
+                Console.WriteLine("Triggering solenoid cycle...");
+                pap3Device.TriggerSolenoid();
+                Console.WriteLine("Cycle complete!");
+            } else {
+                Console.WriteLine("ERROR: Device is not a PAP-3 device!");
+            }
+            
+            Console.WriteLine();
+            Console.WriteLine("Press any key to continue...");
+            Console.ReadKey(intercept: true);
         }
     }
 }

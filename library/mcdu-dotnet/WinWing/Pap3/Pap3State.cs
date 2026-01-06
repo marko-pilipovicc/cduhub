@@ -64,5 +64,12 @@ namespace WwDevicesDotNet.WinWing.Pap3
         /// True if vertical speed display is in FPA mode, false for V/S mode.
         /// </summary>
         public bool VsIsFpa { get; set; } = false;
+
+        /// <summary>
+        /// True if the auto-throttle (A/T ARM) magnetic solenoid should be engaged (locked).
+        /// When true, the A/T ARM switch is locked in position and cannot be moved.
+        /// When false, the A/T ARM switch is free to be moved.
+        /// </summary>
+        public bool MagneticActivated { get; set; } = false;
     }
 }
