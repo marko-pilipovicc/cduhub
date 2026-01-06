@@ -620,6 +620,7 @@ namespace WwDevicesDotNet.WinWing.Pap3
             
             // Then engage (lock knob down)
             SendCommand(BuildEngageSolenoidCommand());
+            _LastMagneticState = true;
         }
 
         /// <inheritdoc/>
