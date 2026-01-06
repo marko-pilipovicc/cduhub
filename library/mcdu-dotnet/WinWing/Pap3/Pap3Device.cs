@@ -133,7 +133,6 @@ namespace WwDevicesDotNet.WinWing.Pap3
 
         ushort _SequenceNumber = 0;
         bool _LastMagneticState = false;
-        System.Threading.Timer _SolenoidTimer;
 
         /// <summary>
         /// Gets the native value from the device's left ambient light sensor.
@@ -626,12 +625,6 @@ namespace WwDevicesDotNet.WinWing.Pap3
         /// <inheritdoc/>
         protected override void Dispose(bool disposing)
         {
-            if(disposing) {
-                // Cleanup solenoid timer
-                _SolenoidTimer?.Dispose();
-                _SolenoidTimer = null;
-            }
-
             base.Dispose(disposing);
         }
 
