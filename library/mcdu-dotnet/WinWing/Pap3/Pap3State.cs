@@ -30,7 +30,7 @@ namespace WwDevicesDotNet.WinWing.Pap3
         public int? Speed 
         { 
             get => int.TryParse(_speedDisplay, out var val) ? val : (int?)null;
-            set => _speedDisplay = value?.ToString().PadLeft(SpeedIsMach ? 3 : 3, '0');
+            set => _speedDisplay = value?.ToString().PadLeft(3, '0');
         }
 
         /// <summary>
