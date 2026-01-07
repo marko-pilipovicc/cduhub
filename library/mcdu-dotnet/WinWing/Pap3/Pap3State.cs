@@ -121,6 +121,7 @@ namespace WwDevicesDotNet.WinWing.Pap3
 
         /// <summary>
         /// Vertical speed value (numeric). Use VerticalSpeedDisplay for alphanumeric control.
+        /// Absolute values are clamped to 0-9999 range (4-digit display limit).
         /// </summary>
         public int? VerticalSpeed
         {
@@ -130,7 +131,9 @@ namespace WwDevicesDotNet.WinWing.Pap3
                 if (value.HasValue)
                 {
                     VerticalSpeedPositive = value.Value >= 0;
-                    _verticalSpeedDisplay = System.Math.Abs(value.Value).ToString("0000");
+                    var absValue = System.Math.Abs(value.Value);
+                    absValue = System.Math.Min(9999, absValue);
+                    _verticalSpeedDisplay = absValue.ToString("0000");
                 }
                 else
                 {
