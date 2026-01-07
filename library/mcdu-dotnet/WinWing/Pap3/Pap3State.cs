@@ -87,7 +87,26 @@ namespace WwDevicesDotNet.WinWing.Pap3
         public int? Heading
         {
             get => int.TryParse(_headingDisplay, out var val) ? val : (int?)null;
-            set => _headingDisplay = value?.ToString("000");
+            set
+            {
+                if (value.HasValue)
+                {
+                    var v = value.Value;
+                    if (v < 0)
+                    {
+                        v = 0;
+                    }
+                    else if (v > 359)
+                    {
+                        v = 359;
+                    }
+                    _headingDisplay = v.ToString("000");
+                }
+                else
+                {
+                    _headingDisplay = null;
+                }
+            }
         }
 
         /// <summary>
