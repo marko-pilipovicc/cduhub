@@ -91,8 +91,8 @@ namespace Pap3AmbientTest
                 var state = new Pap3State
                 {
                     Speed = 888,
-                    PltCourse = 888,
-                    CplCourse = 888,
+                    PltCourseValue = 888,
+                    CplCourseValue = 888,
                     Heading = 888,
                     Altitude = 88888,
                     VerticalSpeed = 8888
@@ -166,8 +166,8 @@ namespace Pap3AmbientTest
                 leds.FdR = false;
 
                 state.Speed = null;
-                state.PltCourse = null;
-                state.CplCourse = null;
+                state.PltCourseValue = null;
+                state.CplCourseValue = null;
                 state.Heading = null;
                 state.Altitude = null;
                 state.VerticalSpeed = null;

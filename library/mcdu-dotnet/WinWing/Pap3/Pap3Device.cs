@@ -44,6 +44,70 @@ namespace WwDevicesDotNet.WinWing.Pap3
             0xDE  // 9: A B C D F G
         };
 
+        // Character to 7-segment mapping for alphanumeric display
+        // Supports digits 0-9 and common letters that can be displayed on 7-segment displays
+        // Bit order: G, F, E, D, C, B, A, DP
+        static readonly Dictionary<char, byte> _CharacterValues = new Dictionary<char, byte>
+        {
+            // Digits (same as _DigitValues)
+            {'0', 0x7E}, {'1', 0x0C}, {'2', 0xB6}, {'3', 0x9E}, {'4', 0xCC},
+            {'5', 0xDA}, {'6', 0xFA}, {'7', 0x0E}, {'8', 0xFE}, {'9', 0xDE},
+            
+            // Uppercase letters (subset displayable on 7-segment)
+            {'A', 0xEE}, // A B C E F G
+            {'B', 0xF8}, // C D E F G (same as lowercase b)
+            {'C', 0x72}, // A D E F
+            {'D', 0xBC}, // B C D E G (same as lowercase d)
+            {'E', 0xF2}, // A D E F G
+            {'F', 0xE2}, // A E F G
+            {'G', 0x7A}, // A C D E F (like 6 without top)
+            {'H', 0xEC}, // B C E F G
+            {'I', 0x0C}, // B C (same as 1)
+            {'J', 0x3C}, // B C D E
+            {'L', 0x70}, // D E F
+            {'N', 0xA8}, // C E G (simplified)
+            {'O', 0x7E}, // A B C D E F (same as 0)
+            {'P', 0xE6}, // A B E F G
+            {'Q', 0xCE}, // A B C F G
+            {'R', 0xA0}, // E G (simplified)
+            {'S', 0xDA}, // A C D F G (same as 5)
+            {'T', 0xF0}, // D E F G
+            {'U', 0x7C}, // B C D E F
+            {'Y', 0xDC}, // B C D F G
+            {'Z', 0xB6}, // A B D E G (same as 2)
+            
+            // Lowercase letters
+            {'a', 0xBE}, // A B C D E G
+            {'b', 0xF8}, // C D E F G
+            {'c', 0xB0}, // D E G
+            {'d', 0xBC}, // B C D E G
+            {'e', 0xF2}, // A D E F G (same as E)
+            {'f', 0xE2}, // A E F G (same as F)
+            {'h', 0xE8}, // C E F G
+            {'i', 0x08}, // C
+            {'j', 0x3C}, // B C D E (same as J)
+            {'l', 0x0C}, // B C (same as I/1)
+            {'n', 0xA8}, // C E G
+            {'o', 0xB8}, // C D E G
+            {'p', 0xE6}, // A B E F G (same as P)
+            {'q', 0xCE}, // A B C F G (same as Q)
+            {'r', 0xA0}, // E G
+            {'t', 0xF0}, // D E F G (same as T)
+            {'u', 0x38}, // C D E
+            {'y', 0xDC}, // B C D F G (same as Y)
+            
+            // Special characters
+            {' ', 0x00}, // Blank
+            {'-', 0x80}, // G only (minus sign)
+            {'_', 0x10}, // D only (underscore)
+            {'=', 0x90}, // D G (equals)
+            {'[', 0x72}, // A D E F
+            {']', 0x1E}, // A B C D
+            {'"', 0x44}, // B F (quote marks)
+            {'\'', 0x40}, // F (apostrophe)
+            {'°', 0xC6}, // A B F G (degree symbol)
+        };
+
         // Segment bit mapping for 7-segment displays
         // These map to the bits in `_DigitValues`.
         //
@@ -128,7 +192,6 @@ namespace WwDevicesDotNet.WinWing.Pap3
             new DigitMapping { BitMask = 0x04, SegmentOffsets = new int[] { 0x1F, 0x23, 0x27, 0x2B, 0x2F, 0x33, 0x37 } }, // Hundreds
             new DigitMapping { BitMask = 0x02, SegmentOffsets = new int[] { 0x1F, 0x23, 0x27, 0x2B, 0x2F, 0x33, 0x37 } }, // Tens
             new DigitMapping { BitMask = 0x01, SegmentOffsets = new int[] { 0x1F, 0x23, 0x27, 0x2B, 0x2F, 0x33, 0x37 } }  // Ones
-            
         };
 
         ushort _SequenceNumber = 0;
@@ -307,7 +370,7 @@ namespace WwDevicesDotNet.WinWing.Pap3
             // Packet 2: 38 command empty (to unit 00 00 - no device)
             // Packet 3: 38 command empty (to unit 00 00 - no device)
             // Packet 4: 2A acknowledgment packet
-            
+                        
             // Packet 1: Main display data (38 command)
             payload[0] = 0xF0;
             payload[1] = 0x00;
@@ -332,10 +395,11 @@ namespace WwDevicesDotNet.WinWing.Pap3
             payload[16] = 0x00;
             payload[17] = 0xB0;
             
-            
+                        
             EncodePap3Displays(payload, state);
 
-            if (state.Speed.HasValue)
+            // Speed mode indicators (IAS vs MACH)
+            if (!string.IsNullOrEmpty(state.SpeedDisplay))
             {
                 if (state.SpeedIsMach)
                 {
@@ -350,7 +414,8 @@ namespace WwDevicesDotNet.WinWing.Pap3
                 }
             }
 
-            if (state.Heading.HasValue)
+            // Heading mode indicators (HDG vs TRK)
+            if (!string.IsNullOrEmpty(state.HeadingDisplay))
             {
                 if (state.HeadingIsTrack)
                 {
@@ -364,16 +429,20 @@ namespace WwDevicesDotNet.WinWing.Pap3
                 }
             }
 
-            if (state.VerticalSpeed.HasValue)
+            // Vertical Speed indicators
+            if (!string.IsNullOrEmpty(state.VerticalSpeedDisplay))
             {
                 payload[0x1F] |= 0x10;
-                if ((state.VerticalSpeed.Value > 0))
+                
+                // Show climb/descent indicator
+                if (state.VerticalSpeedPositive)
                 {
                     payload[0x23] |= 0x10;
                     payload[0x2C] |= 0x80;
                     payload[0x28] |= 0x80;
                 }
 
+                // V/S vs FPA mode
                 if (state.VsIsFpa)
                 {
                     payload[0x30] |= 0x80;  
@@ -447,54 +516,44 @@ namespace WwDevicesDotNet.WinWing.Pap3
                 buffer[i] = 0x00;
             }
 
-            if (state.Speed.HasValue) {
-                var speed = Math.Max(0, Math.Min(9999, state.Speed.Value));
-
-                if(state.SpeedIsMach) {
-                    // Mach speeds come in as "82" for Mach 0.82, or e.g. "105" for Mach 1.05.
-                    // Show as 0.xx / 1.xx on the RIGHTMOST 3 digits.
-                    var leading = speed >= 100 ? 1 : 0;
-                    var lastTwo = speed % 100;
-
-                    EncodeDigitWithMapping(buffer, leading, _Speed3RightAlignedMapping[0]);
-                    EncodeDigitWithMapping(buffer, (lastTwo / 10) % 10, _Speed3RightAlignedMapping[1]);
-                    EncodeDigitWithMapping(buffer, lastTwo % 10, _Speed3RightAlignedMapping[2]);
+            // Encode Speed display (3-4 characters depending on mode)
+            if (!string.IsNullOrEmpty(state.SpeedDisplay)) {
+                if (state.SpeedIsMach) {
+                    // MACH mode: use rightmost 3 digits
+                    EncodeStringWithMapping(buffer, state.SpeedDisplay, _Speed3RightAlignedMapping, 3);
                 } else {
-                    // IAS: support full 0-9999. For traditional 3-digit IAS (0-999), right-align to digits 2-4.
-                    if(speed <= 999) {
-                        EncodeMultiDigitValue(buffer, speed, 3, _Speed3RightAlignedMapping);
+                    // IAS mode: up to 4 digits, but use 3-digit if value fits
+                    if (state.SpeedDisplay.Length <= 3) {
+                        EncodeStringWithMapping(buffer, state.SpeedDisplay, _Speed3RightAlignedMapping, 3);
                     } else {
-                        EncodeMultiDigitValue(buffer, speed, 4, _Speed4Mapping);
+                        EncodeStringWithMapping(buffer, state.SpeedDisplay, _Speed4Mapping, 4);
                     }
                 }
             }
             
-            if (state.PltCourse.HasValue) {
-                var course = Math.Max(0, Math.Min(999, state.PltCourse.Value));
-                EncodeMultiDigitValue(buffer, course, 3, _PltCourseMapping);
-            }
-            if (state.CplCourse.HasValue) {
-                var course = Math.Max(0, Math.Min(999, state.CplCourse.Value));
-                EncodeMultiDigitValue(buffer, course, 3, _CplCourseMapping);
+            // Encode Pilot Course display (3 characters)
+            if (!string.IsNullOrEmpty(state.PltCourse)) {
+                EncodeStringWithMapping(buffer, state.PltCourse, _PltCourseMapping, 3);
             }
 
-            // Encode Heading display (if present)
-            if (state.Heading.HasValue) {
-                var heading = Math.Max(0, Math.Min(999, state.Heading.Value));
-                EncodeMultiDigitValue(buffer, heading, 3, _HeadingMapping);
+            // Encode Copilot Course display (3 characters)
+            if (!string.IsNullOrEmpty(state.CplCourse)) {
+                EncodeStringWithMapping(buffer, state.CplCourse, _CplCourseMapping, 3);
             }
 
-            // Encode Altitude display (if present)
-            if (state.Altitude.HasValue) {
-                var altitude = Math.Max(0, Math.Min(99999, state.Altitude.Value));
-                EncodeMultiDigitValue(buffer, altitude, 5, _AltitudeMapping);
+            // Encode Heading display (3 characters)
+            if (!string.IsNullOrEmpty(state.HeadingDisplay)) {
+                EncodeStringWithMapping(buffer, state.HeadingDisplay, _HeadingMapping, 3);
             }
 
-            // Encode Vertical Speed display (if present)
-            if (state.VerticalSpeed.HasValue) {
-                var vs = Math.Abs(state.VerticalSpeed.Value);
-                vs = Math.Max(0, Math.Min(9999, vs));
-                EncodeMultiDigitValue(buffer, vs, 4, _VerticalSpeedMapping);
+            // Encode Altitude display (5 characters)
+            if (!string.IsNullOrEmpty(state.AltitudeDisplay)) {
+                EncodeStringWithMapping(buffer, state.AltitudeDisplay, _AltitudeMapping, 5);
+            }
+
+            // Encode Vertical Speed display (4 characters)
+            if (!string.IsNullOrEmpty(state.VerticalSpeedDisplay)) {
+                EncodeStringWithMapping(buffer, state.VerticalSpeedDisplay, _VerticalSpeedMapping, 4);
             }
         }
 
@@ -525,6 +584,46 @@ namespace WwDevicesDotNet.WinWing.Pap3
                     // Set the bit at the corresponding offset
                     buffer[mapping.SegmentOffsets[segIdx]] |= mapping.BitMask;
                 }
+            }
+        }
+
+        void EncodeCharWithMapping(byte[] buffer, char character, DigitMapping mapping)
+        {
+            // Try to get the 7-segment pattern for this character
+            if (!_CharacterValues.TryGetValue(character, out var segmentValue))
+            {
+                // Character not found, try uppercase conversion
+                var upperChar = char.ToUpper(character);
+                if (!_CharacterValues.TryGetValue(upperChar, out segmentValue))
+                {
+                    // Still not found, display as blank
+                    segmentValue = 0x00;
+                }
+            }
+
+            // Apply the segment pattern to the display buffer
+            for (int segIdx = 0; segIdx < _SegmentBits.Length && segIdx < mapping.SegmentOffsets.Length; segIdx++)
+            {
+                if ((segmentValue & _SegmentBits[segIdx]) != 0)
+                {
+                    buffer[mapping.SegmentOffsets[segIdx]] |= mapping.BitMask;
+                }
+            }
+        }
+
+        void EncodeStringWithMapping(byte[] buffer, string value, DigitMapping[] mapping, int maxLength)
+        {
+            if (string.IsNullOrEmpty(value))
+                return;
+
+            // Pad or truncate to fit the display
+            var displayValue = value.Length > maxLength 
+                ? value.Substring(0, maxLength) 
+                : value.PadLeft(maxLength, ' ');
+
+            for (int i = 0; i < displayValue.Length && i < mapping.Length; i++)
+            {
+                EncodeCharWithMapping(buffer, displayValue[i], mapping[i]);
             }
         }
                 
