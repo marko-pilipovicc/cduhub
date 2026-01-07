@@ -117,6 +117,9 @@ namespace Pap3LedsTest
                             _Pap3?.UpdateDisplay(_DisplayState);
                             Console.WriteLine("All displays cleared.");
                             break;
+                        case ConsoleKey.N:
+                            TestAlphanumericCharacters();
+                            break;
                         case ConsoleKey.R:
                             TestReleaseSolenoid();
                             break;
@@ -166,7 +169,7 @@ namespace Pap3LedsTest
             Console.WriteLine("  B - Test brightness levels");
             Console.WriteLine();
             Console.WriteLine("Display Tests:");
-            Console.WriteLine("  D - Test all displays (count 0-999 on all displays)");
+            Console.WriteLine("  D - Test all displays (numeric count & alphanumeric text)");
             Console.WriteLine("  S - Test Speed display (IAS/MACH with indicators)");
             Console.WriteLine("  C - Test Course displays (PLT & CPL)");
             Console.WriteLine("  G - Test Heading display (HDG/TRK)");
@@ -339,8 +342,8 @@ namespace Pap3LedsTest
             
             // Test both course displays simultaneously
             for(int course = 0; course <= 359; course += 5) {
-                _DisplayState.PltCourse = course;
-                _DisplayState.CplCourse = (course + 180) % 360; // CPL Course (offset)
+                _DisplayState.PltCourseValue = course;
+                _DisplayState.CplCourseValue = (course + 180) % 360; // CPL Course (offset)
                 _Pap3?.UpdateDisplay(_DisplayState);
                 Console.Write($"\rPLT: {course:000}°  CPL: {_DisplayState.CplCourse:000}°");
                 Thread.Sleep(50);
@@ -599,28 +602,157 @@ namespace Pap3LedsTest
         static void TestAllDisplays()
         {
             Console.WriteLine();
-            Console.WriteLine("=== All Displays Count Test ===");
+            Console.WriteLine("=== All Displays Test ===");
             Console.WriteLine();
-            Console.WriteLine("Counting 0-999 on all displays simultaneously...");
+            Console.WriteLine("Part 1: Numeric count test (0-999)...");
             Console.WriteLine();
 
             for(int count = 0; count <= 999; count += 5) {
                 _DisplayState.Speed = count;           // PLT Course (IAS)
-                _DisplayState.PltCourse = count;          // CPL Course
-                _DisplayState.CplCourse = count;          // CPL Course
+                _DisplayState.PltCourseValue = count;          // PLT Course
+                _DisplayState.CplCourseValue = count;          // CPL Course
                 _DisplayState.Heading = count % 360;   // Heading (wrap at 360)
                 _DisplayState.Altitude = count * 10;   // Altitude (scaled)
                 _DisplayState.VerticalSpeed = (count - 500) * 2; // V/S (centered at 500)
                 
                 _Pap3?.UpdateDisplay(_DisplayState);
                 
-                Console.Write($"\rCount: {count:000}  |  PLT: {count:000}  CPL: {count:000}  HDG: {count % 360:000}  ALT: {count * 10:00000}  V/S: {(count - 500) * 2:+0000;-0000}");
+                Console.Write($"\rCount: {count:000}  |  SPD: {count:000}  PLT: {count:000}  CPL: {count:000}  HDG: {count % 360:000}  ALT: {count * 10:00000}  V/S: {(count - 500) * 2:+0000;-0000}");
                 Thread.Sleep(30);
             }
 
             Console.WriteLine();
             Console.WriteLine();
+            Console.WriteLine("Part 2: Alphanumeric text test...");
+            Console.WriteLine();
+            Thread.Sleep(1000);
+
+            // Test common alphanumeric patterns
+            var textPatterns = new (string speed, string plt, string cpl, string hdg, string alt, string vs, string desc)[]
+            {
+                ("FLt", "---", "---", "---", "-----", "----", "Flight mode"),
+                ("OFF", "OFF", "OFF", "OFF", "-----", "----", "Off state"),
+                ("HLD", "HLD", "HLD", "HLD", "HLD  ", "HLD ", "Hold state"),
+                ("SEL", "SEL", "SEL", "SEL", "-----", "----", "Select mode"),
+                ("   ", "   ", "   ", "   ", "     ", "    ", "Blank displays"),
+                ("---", "---", "---", "---", "-----", "----", "Dashed lines"),
+                ("A320", "270", "090", "180", "35000", "2000", "Mixed numeric/text"),
+                ("Lo ", "Hi ", "Err", "InF", "FL350", "1500", "Various texts"),
+                ("SPd", "CrS", "CrS", "trc", "FEET ", "CLMB", "Descriptive text"),
+                ("123", "abc", "def", "ghi", "12345", "9876", "Letters & numbers"),
+            };
+
+            foreach (var pattern in textPatterns)
+            {
+                Console.WriteLine($"  {pattern.desc}");
+                Console.WriteLine($"    PLT: '{pattern.plt}'  SPD: '{pattern.speed}'  HDG: '{pattern.hdg}'  ALT: '{pattern.alt}'  V/S: '{pattern.vs}'  CPL: '{pattern.cpl}'");
+                
+                _DisplayState.SpeedDisplay = pattern.speed;
+                _DisplayState.PltCourse = pattern.plt;
+                _DisplayState.CplCourse = pattern.cpl;
+                _DisplayState.HeadingDisplay = pattern.hdg;
+                _DisplayState.AltitudeDisplay = pattern.alt;
+                _DisplayState.VerticalSpeedDisplay = pattern.vs;
+                _DisplayState.VerticalSpeedPositive = true;
+                
+                _Pap3?.UpdateDisplay(_DisplayState);
+                Thread.Sleep(1500);
+            }
+
+            Console.WriteLine();
             Console.WriteLine("Test complete! Press any key to continue...");
+            Console.ReadKey(intercept: true);
+            
+            ClearAllDisplays();
+            _Pap3?.UpdateDisplay(_DisplayState);
+        }
+
+        static void TestAlphanumericCharacters()
+        {
+            Console.WriteLine();
+            Console.WriteLine("=== Alphanumeric Characters Test ===");
+            Console.WriteLine();
+            Console.WriteLine("This test cycles through all supported characters on all displays.");
+            Console.WriteLine("Watch the physical PAP-3 panel to see the character rendering.");
+            Console.WriteLine();
+            Console.WriteLine("Press any key to start...");
+            Console.ReadKey(intercept: true);
+            Console.WriteLine();
+
+            // Test digits 0-9
+            Console.WriteLine("Testing digits 0-9...");
+            for (int i = 0; i <= 9; i++)
+            {
+                var digit = i.ToString();
+                _DisplayState.SpeedDisplay = digit.PadLeft(3, ' ');
+                _DisplayState.PltCourse = digit.PadLeft(3, ' ');
+                _DisplayState.CplCourse = digit.PadLeft(3, ' ');
+                _DisplayState.HeadingDisplay = digit.PadLeft(3, ' ');
+                _DisplayState.AltitudeDisplay = digit.PadLeft(5, ' ');
+                _DisplayState.VerticalSpeedDisplay = digit.PadLeft(4, ' ');
+                _Pap3?.UpdateDisplay(_DisplayState);
+                Console.WriteLine($"  Digit: {digit}");
+                Thread.Sleep(800);
+            }
+
+            // Test uppercase letters
+            Console.WriteLine();
+            Console.WriteLine("Testing uppercase letters (A-Z, displayable subset)...");
+            var upperLetters = "ABCDEFGHIJLNOPQRSTUVYZ";
+            foreach (var letter in upperLetters)
+            {
+                var text = letter.ToString();
+                _DisplayState.SpeedDisplay = text.PadLeft(3, ' ');
+                _DisplayState.PltCourse = text.PadLeft(3, ' ');
+                _DisplayState.CplCourse = text.PadLeft(3, ' ');
+                _DisplayState.HeadingDisplay = text.PadLeft(3, ' ');
+                _DisplayState.AltitudeDisplay = text.PadLeft(5, ' ');
+                _DisplayState.VerticalSpeedDisplay = text.PadLeft(4, ' ');
+                _Pap3?.UpdateDisplay(_DisplayState);
+                Console.WriteLine($"  Letter: {letter}");
+                Thread.Sleep(500);
+            }
+
+            // Test lowercase letters
+            Console.WriteLine();
+            Console.WriteLine("Testing lowercase letters (a-z, displayable subset)...");
+            var lowerLetters = "abcdefhijlnopqrtuy";
+            foreach (var letter in lowerLetters)
+            {
+                var text = letter.ToString();
+                _DisplayState.SpeedDisplay = text.PadLeft(3, ' ');
+                _DisplayState.PltCourse = text.PadLeft(3, ' ');
+                _DisplayState.CplCourse = text.PadLeft(3, ' ');
+                _DisplayState.HeadingDisplay = text.PadLeft(3, ' ');
+                _DisplayState.AltitudeDisplay = text.PadLeft(5, ' ');
+                _DisplayState.VerticalSpeedDisplay = text.PadLeft(4, ' ');
+                _Pap3?.UpdateDisplay(_DisplayState);
+                Console.WriteLine($"  Letter: {letter}");
+                Thread.Sleep(500);
+            }
+
+            // Test special characters
+            Console.WriteLine();
+            Console.WriteLine("Testing special characters...");
+            var specialChars = new[] { ' ', '-', '_', '=', '[', ']', '"', '\'', '°' };
+            foreach (var chr in specialChars)
+            {
+                var text = chr.ToString();
+                var displayText = chr == ' ' ? "(space)" : text;
+                _DisplayState.SpeedDisplay = text.PadLeft(3, ' ');
+                _DisplayState.PltCourse = text.PadLeft(3, ' ');
+                _DisplayState.CplCourse = text.PadLeft(3, ' ');
+                _DisplayState.HeadingDisplay = text.PadLeft(3, ' ');
+                _DisplayState.AltitudeDisplay = text.PadLeft(5, ' ');
+                _DisplayState.VerticalSpeedDisplay = text.PadLeft(4, ' ');
+                _Pap3?.UpdateDisplay(_DisplayState);
+                Console.WriteLine($"  Character: {displayText}");
+                Thread.Sleep(800);
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("Character test complete!");
+            Console.WriteLine("Press any key to continue...");
             Console.ReadKey(intercept: true);
             
             ClearAllDisplays();
@@ -873,3 +1005,4 @@ namespace Pap3LedsTest
         }
     }
 }
+
