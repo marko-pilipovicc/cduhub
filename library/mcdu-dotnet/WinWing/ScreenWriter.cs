@@ -48,7 +48,7 @@ namespace WwDevicesDotNet.WinWing
         )
         {
             _UsbWriter.LockForOutput(() => {
-                if(_DisplayBuffer == null) {
+                if(_DisplayBuffer == null || _DisplayBuffer.CountRows != screen.Rows.Length || _DisplayBuffer.CountCells != screen.Rows[0].Cells.Length) {
                     _DisplayBuffer = new DisplayBuffer(screen.Rows.Length, screen.Rows[0].Cells.Length);
                 }
                 var hasChanged = _DisplayBuffer.CopyFrom(screen);

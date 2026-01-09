@@ -18,12 +18,24 @@ namespace WwDevicesDotNet
     /// </summary>
     public class Row
     {
-        public Cell[] Cells { get; } = new Cell[Metrics.Columns];
+        public Cell[] Cells { get; private set; } = new Cell[Metrics.Columns];
 
         public Row()
         {
+            Cells = new Cell[Metrics.Columns];
             for(var idx = 0;idx < Cells.Length;++idx) {
                 Cells[idx] = new Cell();
+            }
+        }
+
+        public void Resize(int columns)
+        {
+            if(columns != Cells.Length) {
+                var newCells = new Cell[columns];
+                for(var idx = 0;idx < columns;++idx) {
+                    newCells[idx] = idx < Cells.Length ? Cells[idx] : new Cell();
+                }
+                Cells = newCells;
             }
         }
 

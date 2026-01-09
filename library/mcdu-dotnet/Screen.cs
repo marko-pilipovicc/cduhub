@@ -141,6 +141,13 @@ namespace WwDevicesDotNet
             return buffer.ToString();
         }
 
+        public void Resize(int columns)
+        {
+            foreach(var row in Rows) {
+                row.Resize(columns);
+            }
+        }
+
         public void Clear()
         {
             foreach(var row in Rows) {

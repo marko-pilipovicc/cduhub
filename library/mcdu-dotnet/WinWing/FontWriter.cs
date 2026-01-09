@@ -76,6 +76,8 @@ namespace WwDevicesDotNet.WinWing
                         _DisplayFont.PixelHeight,
                         xOffset,
                         yOffset,
+                        Metrics.Columns,
+                        Metrics.Lines,
                         _DisplayFont?.LargeGlyphs,
                         _DisplayFont?.SmallGlyphs
                     );

@@ -20,21 +20,21 @@ namespace WwDevicesDotNet
         /// <summary>
         /// The number of columns of display on the MCDU.
         /// </summary>
-        public const int Columns = 24;
+        public static int Columns { get; set; } = 24;
 
         /// <summary>
         /// The total number of cells on the MCDU display.
         /// </summary>
-        public const int Cells = Lines * Columns;
+        public static int Cells => Lines * Columns;
 
         /// <summary>
         /// Display width in pixels.
         /// </summary>
-        public const int DisplayWidthPixels = (16 * 2) + (23 * Columns);
+        public const int DisplayWidthPixels = 584;
 
         /// <summary>
         /// Display height in pixels.
         /// </summary>
-        public const int DisplayHeightPixels = (17 * 2) + (29 * Lines);
+        public const int DisplayHeightPixels = 440;
     }
 }

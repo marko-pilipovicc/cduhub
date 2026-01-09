@@ -312,6 +312,10 @@ namespace WwDevicesDotNet.WinWing
 
         protected void InitialiseBasicFontsAndColours()
         {
+            var colHex = Metrics.Columns.ToString("x2");
+            var lineHex = Metrics.Lines.ToString("x2");
+            var rowSizeHex = (Metrics.Columns * 2 + 4).ToString("x2");
+
             _UsbWriter?.LockForOutput(() => {
                 var packets = new string[] {
                     $"f0000138{CP}00001e0100005f6331000000000000{CP}0000180100005f6331000008000000340018000e001800{CP}0000190100005f633100000e00000000",
@@ -332,6 +336,16 @@ namespace WwDevicesDotNet.WinWing
                     $"f00010381b00000000000000{CP}0000190100005f633100000e0000000400020000001c00000000000000{CP}00001a0100005f633100000100000000000000",
                     $"f000111202{CP}00001c0100005f6331000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
                 };
+
+                for(var i = 0; i < packets.Length; i++) {
+                    if(i == 0) {
+                        var defaultXOffset = 0x24 + (584 - (23 * Metrics.Columns)) / 2;
+                        var defaultXOffsetHex = defaultXOffset.ToString("x2");
+                        packets[i] = packets[i].Replace("340018000e001800", $"{defaultXOffsetHex}001800{lineHex}00{colHex}00");
+                    }
+                    packets[i] = packets[i].Replace("3100000e00", $"310000{lineHex}00");
+                }
+
                 foreach(var packet in packets) {
                     _UsbWriter.SendStringPacket(packet);
                 }
@@ -421,6 +435,7 @@ namespace WwDevicesDotNet.WinWing
                     CP,
                     useFullWidth,
                     () => {
+                        _EmptyScreen.Resize(Metrics.Columns);
                         _ScreenWriter.SendScreenToDisplay(
                             _EmptyScreen,
                             skipDuplicateCheck: false,

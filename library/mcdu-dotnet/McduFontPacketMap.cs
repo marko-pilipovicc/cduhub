@@ -73,6 +73,8 @@ namespace WwDevicesDotNet
             int glyphHeight,
             int xOffset,
             int yOffset,
+            int columns,
+            int lines,
             Dictionary<char, byte[,]> largeGlyphs,
             Dictionary<char, byte[,]> smallGlyphs
         )
@@ -84,7 +86,7 @@ namespace WwDevicesDotNet
                 throw new InvalidOperationException($"Glyph width mismatch - font bytes per row is {glyphWidth / 8}, map is {GlyphWidth / 8}");
             }
 
-            var packetBlob = BuildPacketBlob(commandPrefix);
+            var packetBlob = BuildPacketBlob(commandPrefix, columns, lines);
 
             FillPacketsWithGlyphs(packetBlob, largeGlyphs, LargeGlyphOffsets, isLarge: true);
             FillPacketsWithGlyphs(packetBlob, smallGlyphs, SmallGlyphOffsets, isLarge: false);
@@ -102,15 +104,24 @@ namespace WwDevicesDotNet
             Packets = RebuildPacketsFromBlob(packetBlob);
         }
 
-        private byte[] BuildPacketBlob(string commandPrefix)
+        private byte[] BuildPacketBlob(string commandPrefix, int columns, int lines)
         {
             var blobSize = Packets
                 .Select(packet => packet.Length / 2)
                 .Sum();
             var result = new byte[blobSize];
             var offset = 0;
+
+            var linesHex = lines.ToString("x2");
+            var columnsHex = columns.ToString("x2");
+            var lePattern = "0e001800";
+            var leReplacement = $"{linesHex}00{columnsHex}00";
+
             foreach(var packet in Packets) {
-                var buffer = new StringBuilder(packet.Replace("{CP}", commandPrefix));
+                var buffer = new StringBuilder(packet
+                    .Replace("{CP}", commandPrefix)
+                    .Replace(lePattern, leReplacement)
+                );
                 for(var idx = 0;idx < buffer.Length;++idx) {
                     switch(buffer[idx]) {
                         case '_':
@@ -200,14 +211,14 @@ namespace WwDevicesDotNet
             int yOffset
         )
         {
-            void setXY(int blobOffset, int offset)
+            void setXy(int blobOffset, int offset)
             {
                 if(blobOffset > -1) {
                     packetBlob[blobOffset] = (byte)offset;
                 }
             }
-            setXY(XOffsetOffset, xOffset);
-            setXY(YOffsetOffset, yOffset);
+            setXy(XOffsetOffset, xOffset);
+            setXy(YOffsetOffset, yOffset);
 
             void setWidthHeight(int[] offsets, int value)
             {
